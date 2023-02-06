@@ -1,48 +1,29 @@
 <template>
   <div id="app">
-    <!-- <HelloWorld msg="Welcome to Your Vue.js App"/> -->
-    <header
-      class="w-full p-2 align-middle flex items-center"
-      style="
-        height: 8%;
-        vertical-align: middle;
-        border-bottom: 0.7px solid #4a4c54c2;
+    <Header />
 
-        color: #373f4a;
-      "
-    >
-      <!-- PREMIUM LEAGUE  -->
-      <img src="logo.svg" style="height: 30px" />
-      <h1 class="self-end font-black">&nbsp;Premier League</h1>
-    </header>
     <section class="w-full h-full flex scroller" style="height: 92%">
       <div
         style="width: 25%; height: 100%; border-right: 0.7px solid #4a4c54c2"
         class="p-4 flex flex-col"
       >
-        <h1>Player List</h1>
-        <span> Total Points : 20000</span>
+        <h1 class="font-bold color-primary">Player List</h1>
+        <span class="text-neutral-500">
+          Total Points : {{ totalPlayerPoints }}</span
+        >
 
-        <span> Used Points : 2000</span>
+        <span class="text-neutral-500">
+          Used Points : {{ usedPlayerPoints }}</span
+        >
         <input v-model="search" class="p-1 input mt-4" />
         <div
           class="flex flex-1 flex-col overflow-auto mt-4 h-fit mb-4"
           style="height: 90%"
         >
-          <!-- <RecycleScroller
-            :items="items"
-            :item-size="40"
-            key-field="counterName"
-          >
-            <template v-slot="{ item }">
-              <div class="player bg-slate-800">{{ item }}</div>
-            </template>
-          </RecycleScroller> -->
-
           <div
             ref="itemRef"
-            class="player bg-slate-700 flex justify-between item-container bg-slate-700"
-            v-for="p in items"
+            class="player bg-neutral-800 flex justify-between item-container player-plate text-neutral-500"
+            v-for="p in filteredPlayers"
             :key="p.name"
           >
             <h1>{{ p.name }}</h1>
@@ -58,14 +39,13 @@
               @dragend="dragEnd"
             >
               <font-awesome-icon icon="fa-solid fa-arrows-up-down-left-right" />
-              <!-- <font-awesome-icon icon="fa-solid fa-user-secret" /> -->
             </span>
           </div>
         </div>
       </div>
       <div style="width: 75%; height: 100%" class="p-4">
-        <h1>Teams</h1>
-        <div class="w-full h-full">
+        <h1 class="color-primary font-bold">Teams</h1>
+        <div class="w-full h-full overflow-auto">
           <div
             :style="{
               display: 'grid',
@@ -77,7 +57,7 @@
             <div
               v-for="t in 4"
               :key="t"
-              class="rounded-lg input flex flex-col items-center justify-center text-slate-500 item-container"
+              class="rounded-lg input flex flex-col items-center justify-center text-neutral-500 text-slate-500 item-container"
               style="border-style: dashed !important"
               @dblclick="showTeamInformation(t)"
               @dragover="allowDropSeries($event, t)"
@@ -99,29 +79,34 @@
         </div>
       </div>
     </section>
-
-    <vs-dialog overflow-hidden full-screen v-model="active" @close="closeModel">
-      <template #header>
-        <h4 class="not-margin"><b>Vuesax</b></h4>
-      </template>
-
-      <template #footer> </template>
-    </vs-dialog>
+    <playerListModel
+      :all-player="items"
+      :team-details-for="teamDetailsFor"
+      :active="active"
+      @close="closeModel"
+      @remove-from-team="removeFromTeam"
+    />
   </div>
 </template>
 
 <script>
-// import HelloWorld from './components/HelloWorld.vue'
+import Header from "./components/Header.vue";
+import playerListModel from "./components/PlayerListModel.vue";
 
 export default {
   name: "App",
   components: {
-    // HelloWorld
+    Header,
+    playerListModel,
   },
+
   data() {
     return {
-      search: undefined,
+      search: "",
       dragedPlayer: undefined,
+      teamDetailsFor: undefined,
+      active: false,
+      fetchedDataFromFirebase: undefined,
       items: [
         {
           name: "player 1",
@@ -167,14 +152,80 @@ export default {
           name: "player 11",
           point: 200,
         },
+        {
+          name: "player 12",
+          point: 200,
+        },
+        {
+          name: "player 13",
+          point: 200,
+        },
+        {
+          name: "player 14",
+          point: 200,
+        },
+        {
+          name: "player 15",
+          point: 200,
+        },
+        {
+          name: "player 16",
+          point: 200,
+        },
+        {
+          name: "player 17",
+          point: 200,
+        },
+        {
+          name: "player 18",
+          point: 200,
+        },
+        {
+          name: "player 19",
+          point: 200,
+        },
+        {
+          name: "player 20",
+          point: 200,
+        },
+        {
+          name: "player 21",
+          point: 200,
+        },
+        {
+          name: "player 22",
+          point: 200,
+        },
       ],
-      active: false,
     };
+  },
+  computed: {
+    unselectedPlayers() {
+      return this.items.filter((player) => player.team === undefined);
+    },
+    totalPlayerPoints() {
+      return this.items.reduce((acc, player) => acc + player.point, 0);
+    },
+    usedPlayerPoints() {
+      return this.items.reduce((acc, player) => {
+        if (player.team !== undefined) {
+          return acc + player.point;
+        } else {
+          return acc;
+        }
+      }, 0);
+    },
+    filteredPlayers() {
+      return this.unselectedPlayers.filter((player) => {
+        return player.name.toLowerCase().includes(this.search.toLowerCase());
+      });
+    },
   },
   methods: {
     showTeamInformation(t) {
-      console.log(t);
-
+      // eslint-disable-next-line
+      debugger;
+      this.teamDetailsFor = t;
       this.active = true;
     },
     dragStart(event, item) {
@@ -212,7 +263,22 @@ export default {
         e.preventDefault();
       }
     },
-    closeModel() {},
+    closeModel() {
+      this.active = false;
+      this.teamDetailsFor = undefined;
+    },
+
+    removeFromTeam(name) {
+      let index = this.items.findIndex((item) => item.name === name);
+      this.items = [
+        ...this.items.slice(0, index),
+        {
+          ...this.items[index],
+          team: undefined,
+        },
+        ...this.items.slice(index + 1),
+      ];
+    },
   },
 };
 </script>
@@ -260,5 +326,17 @@ export default {
   background-color: transparent;
   border-radius: 5px;
   border: 1px solid #4a4c54c2;
+}
+
+.item-container:hover {
+  /* box-shadow: 0 0 11px rgba(33, 33, 33, 1); */
+
+  box-shadow: rgba(255, 255, 255, 0.1) 0px 0px 16px;
+}
+.player-plate:hover {
+  box-shadow: 0 0 11px rgba(33, 33, 33, 1);
+}
+.color-primary {
+  color: #1373ab;
 }
 </style>

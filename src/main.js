@@ -15,9 +15,11 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 /* import specific icons */
 import { faUserSecret } from "@fortawesome/free-solid-svg-icons";
-import { faArrowsUpDownLeftRight } from "@fortawesome/free-solid-svg-icons";
 
-library.add(faUserSecret, faArrowsUpDownLeftRight);
+import { faArrowsUpDownLeftRight } from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+
+library.add(faUserSecret, faArrowsUpDownLeftRight, faTrash);
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 Vue.use(Vuesax);
 Vue.component("RecycleScroller", RecycleScroller);
