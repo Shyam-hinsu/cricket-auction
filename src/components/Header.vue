@@ -19,20 +19,13 @@
 </template>
 
 <script>
-// import { db } from "@/firebase/firebaseinit";
-// import { collection } from "firebase/firestore";
 export default {
   // eslint-disable-next-line
   name: "Header",
-  // methods: {
-  //   init() {
-  //     this.fetchedDataFromFirebase = collection(db, "players");
+  data() {
+    return {};
+  },
 
-  //     this.getNotes();
-  //   },
-  // },
-  // created() {
-  //   this.init();
-  // },
+  methods: {},
 };
 </script>

@@ -80,7 +80,7 @@
       </div>
     </section>
     <playerListModel
-      :all-player="items"
+      :all-player="players"
       :team-details-for="teamDetailsFor"
       :active="active"
       @close="closeModel"
@@ -90,6 +90,9 @@
 </template>
 
 <script>
+import { db } from "@/firebase/firebaseinit";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+
 import Header from "./components/Header.vue";
 import playerListModel from "./components/PlayerListModel.vue";
 
@@ -107,6 +110,8 @@ export default {
       teamDetailsFor: undefined,
       active: false,
       fetchedDataFromFirebase: undefined,
+      getNotesSnapshots: undefined,
+      players: [],
       items: [
         {
           name: "player 1",
@@ -199,29 +204,43 @@ export default {
       ],
     };
   },
-  computed: {
-    unselectedPlayers() {
-      return this.items.filter((player) => player.team === undefined);
-    },
-    totalPlayerPoints() {
-      return this.items.reduce((acc, player) => acc + player.point, 0);
-    },
-    usedPlayerPoints() {
-      return this.items.reduce((acc, player) => {
-        if (player.team !== undefined) {
-          return acc + player.point;
-        } else {
-          return acc;
-        }
-      }, 0);
-    },
-    filteredPlayers() {
-      return this.unselectedPlayers.filter((player) => {
-        return player.name.toLowerCase().includes(this.search.toLowerCase());
-      });
-    },
+  created() {
+    this.init();
   },
+
   methods: {
+    init() {
+      // eslint-disable-next-line
+      debugger;
+      this.fetchedDataFromFirebase = collection(db, "players");
+
+      this.getPlayers();
+    },
+    getPlayers() {
+      let notesCollectionRef = collection(db, "players");
+      let notesCollectionQuery = query(notesCollectionRef, orderBy("name"));
+
+      this.getNotesSnapshots = onSnapshot(
+        notesCollectionQuery,
+        (querySnapshot) => {
+          let players = [];
+          querySnapshot.forEach((doc) => {
+            let player = {
+              name: doc.data().name,
+              point: doc.data().point,
+              run: doc.data().run,
+              wicket: doc.data().point,
+            };
+            players.unshift(player);
+          });
+          this.players = players;
+          // this.isNotesLoaded = false;
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+    },
     showTeamInformation(t) {
       // eslint-disable-next-line
       debugger;
@@ -244,16 +263,16 @@ export default {
       if (this.dragedPlayer) {
         e.preventDefault();
 
-        let index = this.items.findIndex(
+        let index = this.players.findIndex(
           (item) => item.name === this.dragedPlayer.name
         );
-        this.items = [
-          ...this.items.slice(0, index),
+        this.players = [
+          ...this.players.slice(0, index),
           {
-            ...this.items[index],
+            ...this.players[index],
             team: t,
           },
-          ...this.items.slice(index + 1),
+          ...this.players.slice(index + 1),
         ];
         e.preventDefault();
       }
@@ -269,15 +288,43 @@ export default {
     },
 
     removeFromTeam(name) {
-      let index = this.items.findIndex((item) => item.name === name);
-      this.items = [
-        ...this.items.slice(0, index),
+      let index = this.players.findIndex((item) => item.name === name);
+      this.players = [
+        ...this.players.slice(0, index),
         {
-          ...this.items[index],
+          ...this.players[index],
           team: undefined,
         },
-        ...this.items.slice(index + 1),
+        ...this.players.slice(index + 1),
       ];
+    },
+  },
+  computed: {
+    unselectedPlayers() {
+      return this.players.filter((player) => player.team === undefined);
+    },
+    totalPlayerPoints() {
+      return this.players.reduce((acc, player) => {
+        if (player.point) {
+          return acc + player.point;
+        } else {
+          return acc;
+        }
+      }, 0);
+    },
+    usedPlayerPoints() {
+      return this.players.reduce((acc, player) => {
+        if (player.team !== undefined && player.point) {
+          return acc + player.point;
+        } else {
+          return acc;
+        }
+      }, 0);
+    },
+    filteredPlayers() {
+      return this.unselectedPlayers.filter((player) => {
+        return player.name.toLowerCase().includes(this.search.toLowerCase());
+      });
     },
   },
 };
