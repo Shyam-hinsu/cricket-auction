@@ -7,14 +7,25 @@
         style="width: 25%; height: 100%; border-right: 0.7px solid #4a4c54c2"
         class="p-4 flex flex-col"
       >
-        <h1 class="font-bold color-primary">Player List</h1>
-        <span class="text-neutral-500">
-          Total Points : {{ totalPlayerPoints }}</span
-        >
+        <div class="flex justify-between items-center">
+          <div class="flex flex-col">
+            <h1 class="font-bold color-primary">Player List</h1>
+            <span class="text-neutral-500">
+              Total Points : {{ totalPlayerPoints }}</span
+            >
 
-        <span class="text-neutral-500">
-          Used Points : {{ usedPlayerPoints }}</span
-        >
+            <span class="text-neutral-500">
+              Used Points : {{ usedPlayerPoints }}</span
+            >
+          </div>
+
+          <font-awesome-icon
+            icon="fa-solid fa-square-plus"
+            class="color-primary text-5xl cursor-pointer"
+            @click="tglToadd = true"
+          />
+        </div>
+
         <input v-model="search" class="p-1 input mt-4" />
         <div
           class="flex flex-1 flex-col overflow-auto mt-4 h-fit mb-4"
@@ -28,23 +39,40 @@
           >
             <h1>{{ p.name }}</h1>
 
-            <span
-              variant="transparent"
-              class="cursor-move"
-              style="padding: 3px 20px"
-              :shadow="false"
-              shape="circle"
-              draggable="true"
-              @dragstart="dragStart($event, p)"
-              @dragend="dragEnd"
-            >
-              <font-awesome-icon icon="fa-solid fa-arrows-up-down-left-right" />
-            </span>
+            <div>
+              <font-awesome-icon
+                icon="fa-solid fa-trash"
+                class="cursor-pointer text-red-800"
+                @click="deletePalyer(p.id)"
+              />
+
+              <span
+                variant="transparent"
+                class="cursor-move"
+                style="padding: 3px 20px"
+                :shadow="false"
+                shape="circle"
+                draggable="true"
+                @dragstart="dragStart($event, p)"
+                @dragend="dragEnd"
+              >
+                <font-awesome-icon
+                  icon="fa-solid fa-arrows-up-down-left-right"
+                />
+              </span>
+            </div>
           </div>
         </div>
       </div>
       <div style="width: 75%; height: 100%" class="p-4">
-        <h1 class="color-primary font-bold">Teams</h1>
+        <div class="flex justify-between w-full">
+          <h1 class="color-primary font-bold">Teams</h1>
+          <font-awesome-icon
+            icon="fa-solid fa-square-plus"
+            class="color-primary text-xl cursor-pointer"
+          />
+        </div>
+
         <div class="w-full h-full overflow-auto">
           <div
             :style="{
@@ -86,21 +114,39 @@
       @close="closeModel"
       @remove-from-team="removeFromTeam"
     />
+    <PlayerForm
+      @add-player="addpalyer"
+      @close="tglToadd = false"
+      :active="tglToadd"
+    />
   </div>
 </template>
 
 <script>
+import { v4 as uuidv4 } from "uuid";
+
 import { db } from "@/firebase/firebaseinit";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  // updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 
 import Header from "./components/Header.vue";
 import playerListModel from "./components/PlayerListModel.vue";
+import PlayerForm from "./components/playerForm.vue";
 
 export default {
   name: "App",
   components: {
     Header,
     playerListModel,
+    PlayerForm,
   },
 
   data() {
@@ -109,99 +155,11 @@ export default {
       dragedPlayer: undefined,
       teamDetailsFor: undefined,
       active: false,
-      fetchedDataFromFirebase: undefined,
+      notesCollectionRef: undefined,
+
       getNotesSnapshots: undefined,
       players: [],
-      items: [
-        {
-          name: "player 1",
-          point: 200,
-        },
-        {
-          name: "player 2",
-          point: 200,
-        },
-        {
-          name: "player 3",
-          point: 200,
-        },
-        {
-          name: "player 4",
-          point: 200,
-        },
-        {
-          name: "player 5",
-          point: 200,
-        },
-        {
-          name: "player 6",
-          point: 200,
-        },
-        {
-          name: "player 7",
-          point: 200,
-        },
-        {
-          name: "player 8",
-          point: 200,
-        },
-        {
-          name: "player 9",
-          point: 200,
-        },
-        {
-          name: "player 10",
-          point: 200,
-        },
-        {
-          name: "player 11",
-          point: 200,
-        },
-        {
-          name: "player 12",
-          point: 200,
-        },
-        {
-          name: "player 13",
-          point: 200,
-        },
-        {
-          name: "player 14",
-          point: 200,
-        },
-        {
-          name: "player 15",
-          point: 200,
-        },
-        {
-          name: "player 16",
-          point: 200,
-        },
-        {
-          name: "player 17",
-          point: 200,
-        },
-        {
-          name: "player 18",
-          point: 200,
-        },
-        {
-          name: "player 19",
-          point: 200,
-        },
-        {
-          name: "player 20",
-          point: 200,
-        },
-        {
-          name: "player 21",
-          point: 200,
-        },
-        {
-          name: "player 22",
-          point: 200,
-        },
-      ],
+      tglToadd: false,
     };
   },
   created() {
@@ -210,15 +168,18 @@ export default {
 
   methods: {
     init() {
-      // eslint-disable-next-line
-      debugger;
-      this.fetchedDataFromFirebase = collection(db, "players");
+      this.notesCollectionRef = collection(db, "players");
 
       this.getPlayers();
     },
     getPlayers() {
-      let notesCollectionRef = collection(db, "players");
-      let notesCollectionQuery = query(notesCollectionRef, orderBy("name"));
+      // eslint-disable-next-line
+      debugger;
+
+      let notesCollectionQuery = query(
+        this.notesCollectionRef,
+        orderBy("name")
+      );
 
       this.getNotesSnapshots = onSnapshot(
         notesCollectionQuery,
@@ -226,6 +187,7 @@ export default {
           let players = [];
           querySnapshot.forEach((doc) => {
             let player = {
+              id: doc.data().id,
               name: doc.data().name,
               point: doc.data().point,
               run: doc.data().run,
@@ -241,6 +203,22 @@ export default {
         }
       );
     },
+    async addpalyer(data) {
+      // eslint-disable-next-line
+      debugger;
+
+      await setDoc(doc(this.notesCollectionRef, uuidv4()), {
+        id: uuidv4(),
+        name: data.name,
+      }).finally(() => {
+        this.tglToadd = false;
+      });
+    },
+
+    async deletePalyer(id) {
+      await deleteDoc(doc(this.notesCollectionRef, id));
+    },
+
     showTeamInformation(t) {
       // eslint-disable-next-line
       debugger;

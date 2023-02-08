@@ -14,7 +14,7 @@
   >
     <template #header>
       <h4 class="not-margin">
-        <b>{{ teamDetailsFor }}</b>
+        <b>Team {{ teamDetailsFor }}</b>
       </h4>
     </template>
     <div class="center examplex">
