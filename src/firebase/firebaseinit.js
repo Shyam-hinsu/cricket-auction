@@ -10,13 +10,12 @@ import { getFirestore } from "firebase/firestore";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBCKHa6JGzxHEUoyd9OfoF5EOxhQSJWR1A",
-  authDomain: "cricket-auction-60461.firebaseapp.com",
-  projectId: "cricket-auction-60461",
-  storageBucket: "cricket-auction-60461.appspot.com",
-  messagingSenderId: "465980317699",
-  appId: "1:465980317699:web:6602489bc932767bd06e36",
-  measurementId: "G-KDHXRDXCJS",
+  apiKey: "AIzaSyBPLAFNUmtIXWyUajzflySXImAIbGgWLHI",
+  authDomain: "cricket-auction-5031f.firebaseapp.com",
+  projectId: "cricket-auction-5031f",
+  storageBucket: "cricket-auction-5031f.appspot.com",
+  messagingSenderId: "336383709094",
+  appId: "1:336383709094:web:8146fe194a89a37e5a4967",
 };
 // Initialize Cloud Firestore and get a reference to the service
 const app = initializeApp(firebaseConfig);
